@@ -123,8 +123,8 @@ proc errorCalc { } {
 
 	set EZt3 [expr $sum1 / $N]
 	##puts "confidentialInterval% : [expr ($errorZnt / $EZt3) * 100 ]"
-	#printing: b lambdaCbr Ezt confidentialInterval% 
-	puts "$arg_b\t$arg_lambda_cbr\t$EZt3\t[expr ($errorZnt / $EZt3) * 100 ]"
+	#printing: b lambdaCbr Ezt confidentialInterval simulation_total_time partitions(N)% 
+	puts "$arg_b\t$arg_lambda_cbr\t$EZt3\t[expr ($errorZnt / $EZt3) * 100 ]\t$simulation_total_time\t$N"
 
 }
 
