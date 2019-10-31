@@ -3,7 +3,9 @@ set ns [new Simulator]
 
 # $ns trace-all $tf
 
-set simulation_total_time 1000.0 ; # !!!!!!!!!!! before Nt
+set simulation_total_time [lindex $argv 2]
+set N [lindex $argv 3]
+# set simulation_total_time 1000.0 ; # !!!!!!!!!!! before Nt
 
 set usedBW 80
 set Ton 0.001
@@ -15,8 +17,16 @@ set dropCounter 0.0
 set sum1 0.0
 set sum2 0.0
 set Zt 0.0
-set N 10.0 ; # !!!!!!!!!!!
+# set N 10.0 ; # !!!!!!!!!!!
 set T [expr $simulation_total_time / $N] ; # !!!!!!!!!!!
+
+
+# if {$argc != 2}
+# {
+# Error "\nCommand: ns project.tcl \n\n "
+# }
+set arg_b [lindex $argv 0] ;# 1st run time argument
+set arg_lambda_cbr [lindex $argv 1] ;# 2nd run time argument
 
 # set errorZt 0
 # set errorZnt 0
@@ -42,11 +52,11 @@ proc settingSources {b lambdaCbr_} {
 	$sourceOnOff set rate_ $D; # !!!! changes depending of B, changes in each simulation
 	$cbr1 set rate_ $rateCbr; # changes with landa CBR in each simulation
 	
-	puts "b: $b lambdaCbr_: $lambdaCbr_"
-	puts "sourceOnOff: Idle_time: [$sourceOnOff set idle_time_], Burst_time: [$sourceOnOff set burst_time_], Rate: [$sourceOnOff set rate_ ]"
-	puts "sourceCbr: Rate: [$cbr1 set rate_]"
+	##puts "b: $b lambdaCbr_: $lambdaCbr_"
+	##puts "sourceOnOff: Idle_time: [$sourceOnOff set idle_time_], Burst_time: [$sourceOnOff set burst_time_], Rate: [$sourceOnOff set rate_ ]"
+	##puts "sourceCbr: Rate: [$cbr1 set rate_]"
 	#puts "Toff = $Toff D = $D"
-	puts "finishing to setting the sources"
+	##puts "finishing to setting the sources"
 }
 
 proc restartCBR { } {
@@ -69,7 +79,7 @@ proc restartCBR { } {
 proc print_results { } {
 	global ns dsamp_on_off interval sum1 sum2 Zt
 	# puts "ns: [$ns now], samples_object: $samples_object"
-	puts "time: [$ns now], Zt(mean): [$dsamp_on_off mean]"
+	##puts "time: [$ns now], Zt(mean): [$dsamp_on_off mean]"
 
 	#optional
 	# puts "global monitor drops: [$monitor_n0_n1 set pdrops_] \
@@ -79,7 +89,7 @@ proc print_results { } {
 	set Zt [$dsamp_on_off mean]
    	set sum1 [expr $sum1 + $Zt]
     set sum2 [expr $sum2 + ($Zt * $Zt)]
-	puts "CI calc: sum1=$sum1 sum2=$sum2"
+	##puts "CI calc: sum1=$sum1 sum2=$sum2"
 
 	# puts "size of the sample of flow monitor: [$dsamp_on_off set int_]" ; #gives the size of the sample
 	$dsamp_on_off reset; #empties the sample
@@ -88,11 +98,11 @@ proc print_results { } {
 
 proc confidentialInterval { } {
     global sum1 sum2 dropCounter sentCounter Zt T ns
-    puts "time [expr [$ns now]], T:$T"
+    ##puts "time [expr [$ns now]], T:$T"
 	set Zt [expr $dropCounter / $sentCounter]
     set sum1 [expr $sum1 + $Zt]
     set sum2 [expr $sum2 + ($Zt * $Zt)]
-	puts "CI calc: sum1=$sum1 sum2=$sum2"
+	##puts "CI calc: sum1=$sum1 sum2=$sum2"
 #reset the counters
 #	puts "Zt=$Zt"
 	set sentCounter 0.0
@@ -101,7 +111,7 @@ proc confidentialInterval { } {
 }
 
 proc errorCalc { } {
-	global N simulation_total_time sum2 sum1 Zt T
+	global N simulation_total_time sum2 sum1 Zt T arg_b arg_lambda_cbr
 	#	puts "sum1=$sum1 sum2=$sum2"
 	set EZt2 [expr $sum2 / $N]
 	set EZt [expr ($sum1 * $sum1) / ($N * $N)]
@@ -109,10 +119,12 @@ proc errorCalc { } {
 	set standartDeviation [expr sqrt($EZt2 - $EZt)]
 	set errorZt [expr 4.5 * $standartDeviation]
 	set errorZnt [expr $errorZt * (sqrt($T / $simulation_total_time))]
-	puts "errorZt: $errorZt, errorZnt:$errorZnt"
+	##puts "errorZt: $errorZt, errorZnt:$errorZnt"
 
 	set EZt3 [expr $sum1 / $N]
-	puts "confidentialInterval% : [expr ($errorZnt / $EZt3) * 100 ]"
+	##puts "confidentialInterval% : [expr ($errorZnt / $EZt3) * 100 ]"
+	#printing: b lambdaCbr Ezt confidentialInterval% 
+	puts "$arg_b\t$arg_lambda_cbr\t$EZt3\t[expr ($errorZnt / $EZt3) * 100 ]"
 
 }
 
@@ -150,7 +162,7 @@ $sourceOnOff set packetSize_ 1000 #bytes
 #attach the application to the agent
 $sourceOnOff attach-agent $udp1_src
 
-$ns at 0.0 "settingSources 3 0.25 " 
+$ns at 0.0 "settingSources $arg_b $arg_lambda_cbr" 
 
 #set when the application begins and stops in seconds 
 $ns at 0.0 "$sourceOnOff start"
