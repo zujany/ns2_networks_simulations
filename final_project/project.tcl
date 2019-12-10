@@ -1,3 +1,12 @@
+# Authors: 	Rafael BLANCO
+#			Zujany SALAZAR
+
+# Network Simulation Project
+
+# Objective: identify the performance changes in term of end to end latency 
+# when the UDP source takes different portions of bandwidth and when the ON/OFF 
+# source's burstiness varies. 
+
 set ns [new Simulator]
 # set tf [open output.tr w]
 
