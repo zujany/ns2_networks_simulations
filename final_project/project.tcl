@@ -3,10 +3,22 @@ set ns [new Simulator]
 
 # $ns trace-all $tf
 
-set simulation_total_time [lindex $argv 2]
-set N [lindex $argv 3]
-# set simulation_total_time 1000.0 ; # !!!!!!!!!!! before Nt
+# if {$argc != 2}
+# {
+# Error "\nCommand: ns project.tcl \n\n "
+# }
 
+#Setting constants provided by user
+set arg_b [lindex $argv 0] ;# 1st run time argument
+set arg_lambda_cbr [lindex $argv 1] ;# 2nd run time argument
+set simulation_total_time [lindex $argv 2] ;# 3rd run time argument
+set N [lindex $argv 3] ; # 4th run time argument
+
+# set simulation_total_time 1000.0 ; # !!!!!!!!!!! before Nt
+# set N 10.0 ; # !!!!!!!!!!!
+
+
+#Setting constants valids for all the simulations
 set usedBW 80
 set Ton 0.001
 set rateCbr 0
@@ -17,21 +29,7 @@ set dropCounter 0.0
 set sum1 0.0
 set sum2 0.0
 set Zt 0.0
-# set N 10.0 ; # !!!!!!!!!!!
 set T [expr $simulation_total_time / $N] ; # !!!!!!!!!!!
-
-
-# if {$argc != 2}
-# {
-# Error "\nCommand: ns project.tcl \n\n "
-# }
-set arg_b [lindex $argv 0] ;# 1st run time argument
-set arg_lambda_cbr [lindex $argv 1] ;# 2nd run time argument
-
-# set errorZt 0
-# set errorZnt 0
-# set standartDeviation 0
-
 set interval $T
 
 proc finish {} {
@@ -76,7 +74,7 @@ proc restartCBR { } {
 
 #Calculating confidence intervals 
 
-proc print_results { } {
+proc confidence_interval { } {
 	global ns dsamp_on_off interval sum1 sum2 Zt
 	# puts "ns: [$ns now], samples_object: $samples_object"
 	##puts "time: [$ns now], Zt(mean): [$dsamp_on_off mean]"
@@ -93,21 +91,7 @@ proc print_results { } {
 
 	# puts "size of the sample of flow monitor: [$dsamp_on_off set int_]" ; #gives the size of the sample
 	$dsamp_on_off reset; #empties the sample
-	$ns at [expr [$ns now] + $interval] "print_results"
-}
-
-proc confidentialInterval { } {
-    global sum1 sum2 dropCounter sentCounter Zt T ns
-    ##puts "time [expr [$ns now]], T:$T"
-	set Zt [expr $dropCounter / $sentCounter]
-    set sum1 [expr $sum1 + $Zt]
-    set sum2 [expr $sum2 + ($Zt * $Zt)]
-	##puts "CI calc: sum1=$sum1 sum2=$sum2"
-#reset the counters
-#	puts "Zt=$Zt"
-	set sentCounter 0.0
-	set dropCounter 0.0
-    $ns at [expr [$ns now] + $T] "confidentialInterval" 
+	$ns at [expr [$ns now] + $interval] "confidence_interval"
 }
 
 proc errorCalc { } {
@@ -122,8 +106,7 @@ proc errorCalc { } {
 	##puts "errorZt: $errorZt, errorZnt:$errorZnt"
 
 	set EZt3 [expr $sum1 / $N]
-	##puts "confidentialInterval% : [expr ($errorZnt / $EZt3) * 100 ]"
-	#printing: b lambdaCbr Ezt confidentialInterval simulation_total_time partitions(N)% 
+
 	puts "$arg_b\t$arg_lambda_cbr\t$EZt3\t[expr ($errorZnt / $EZt3) * 100 ]\t$simulation_total_time\t$N"
 
 }
@@ -195,13 +178,9 @@ set slot [$classif installNext $fdesc_on_off]
 $classif set-hash auto $udp1_src $udp1_dest 1 $slot
 
 
-$ns at $interval "print_results"
+$ns at $interval "confidence_interval"
 
 
-# [$ns link $n0 $n1] trace-callback $ns "myproc"
-
-# $ns at $T "confidentialInterval"
 $ns at [expr $simulation_total_time + 0.001] "errorCalc"
 $ns at [expr $simulation_total_time + 0.001] "finish"; #max 2h of execution time 
 $ns run
-#new
